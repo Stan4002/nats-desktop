@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Fix the home screen staying on “Checking assistant…” because the refresh worker thread was never started.
 - Show calendar connection, stale/update time, and task counts from `/v1/home` on the home screen.
 - Refresh every 30 seconds, refuse overlapping requests, and keep the last successful summary when a later refresh fails.
 

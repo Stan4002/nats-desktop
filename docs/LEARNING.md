@@ -1,5 +1,23 @@
 # Learning log
 
+## 2026-10-26: worker thread must actually be started
+
+The home screen stayed on “Checking assistant…” because `call_in_thread` never ran the HTTP work.
+
+What happens on a successful startup:
+
+1. `NatsApplication.do_activate` creates `NatsWindow`.
+2. `NatsWindow.refresh()` sets `_busy`, shows the checking page, and calls `call_in_thread(self._client.fetch_overview, ...)`.
+3. `call_in_thread` starts a daemon thread. That thread calls `fetch_overview()` (not the GTK thread).
+4. When the thread finishes, `GLib.idle_add(_deliver, callback, value)` runs `_deliver` on the GTK main loop.
+5. `_on_overview` clears `_busy` and `HomePage.show_overview()` switches the stack from `empty` to `content`.
+
+If step 3 is missing, the API can be healthy and you still never leave the loading page, with no traceback. `_busy` also blocks the 30-second refresh.
+
+Read [src/nats_desktop/async_call.py](../src/nats_desktop/async_call.py) first, then [src/nats_desktop/window.py](../src/nats_desktop/window.py).
+
+Try this yourself: comment out `threading.Thread(...).start()`, run `./.venv/bin/python -m pytest tests/test_async_call.py -q`, and watch the GLib-loop tests fail the timeout with an empty `received` list. Undo by restoring `.start()`.
+
 ## 2026-10-26: home refresh, last-good data, and /v1/home summary
 
 The home screen now asks two questions: is the assistant process alive, and what summary does `/v1/home` currently report?

@@ -1,5 +1,12 @@
 # Known bugs and fixes
 
+## 2026-10-26: home screen stuck on “Checking assistant…”
+
+- Symptom: the window opened on the loading page and never left it, even when `/v1/status` and `/v1/home` returned HTTP 200. The launch terminal printed nothing.
+- Cause: `call_in_thread` defined a worker `runner` but never started it. `threading.Thread(...).start()` had been left after `return False` inside `_deliver`, so it was unreachable. `NatsWindow.refresh()` still set `_busy` and showed the checking page, then waited forever for a callback that could not run. The 30s timer could not help because `_busy` stayed true.
+- Fix: start the daemon thread at the end of `call_in_thread`. Tests now require `.start()` in that function and wait on the GLib loop for success and error delivery.
+- Verification: `./.venv/bin/python -m pytest -q` (including `tests/test_async_call.py`). A short Adw probe with a mock transport switched the stack from `empty` to `content`. Full interactive GUI still needs a manual launch.
+
 ## 2026-10-26: refresh wiped the last good home details
 
 - Symptom: pressing refresh or losing the backend replaced service/version with "…" or em dashes, even after a successful check.

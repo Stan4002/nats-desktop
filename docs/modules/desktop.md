@@ -39,6 +39,6 @@ Requests stay on loopback. The home screen does not print task titles, event des
 
 ## Known issues
 
-- The window needs a graphical session (Wayland/X11). Tests cover the HTTP client, not widget rendering.
+- The window needs a graphical session (Wayland/X11). Client tests need no display. `call_in_thread` is covered with a GLib main loop, not a visible Adw window.
 - A skipped refresh (already busy) still lets the in-flight HTTP calls finish; only the matching request id may update the widgets.
 - Closing the window marks it disposed and removes the 30s GLib timeout; a worker that finishes later is ignored.
