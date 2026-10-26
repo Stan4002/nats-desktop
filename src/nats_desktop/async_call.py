@@ -28,9 +28,11 @@ def call_in_thread(
         else:
             GLib.idle_add(_deliver, on_success, result)
 
+    # Must stay inside call_in_thread. If start() is omitted, refresh() leaves
+    # the window on "Checking assistant…" forever with no terminal output.
+    threading.Thread(target=runner, daemon=True).start()
+
 
 def _deliver(callback: Callable[[object], None], value: object) -> bool:
     callback(value)
     return False
-
-    threading.Thread(target=runner, daemon=True).start()
