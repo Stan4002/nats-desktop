@@ -6,9 +6,9 @@ This application does not store assistant data. `nats-assistant` on `http://127.
 
 ## Current milestone
 
-G0 + G1: a launchable `Adw.ApplicationWindow` with a home screen that checks `GET /v1/status`, shows connection state, and stays responsive if the backend is offline.
+Home reliability: the window still checks `GET /v1/status`, and also reads summary fields from `GET /v1/home` (calendar connection/stale/updated_at, pending and due-today counts). It refreshes every 30 seconds, keeps the last successful summary if a later call fails, and does not freeze when the backend is offline.
 
-Tasks, calendar, chat, and `/v1/home` content are out of scope.
+Task lists, calendar events, chat, and captures remain out of scope.
 
 ## Architecture
 
@@ -56,10 +56,11 @@ The assistant service should already be running for a connected view:
 
 ```bash
 curl http://127.0.0.1:8765/v1/status
+curl http://127.0.0.1:8765/v1/home
 .venv/bin/nats-desktop
 ```
 
-To test the offline path, stop the assistant (or simply run the app when nothing is listening on 8765). The window should still open immediately and then show "Assistant is offline".
+To test the offline path, stop the assistant and press refresh (or wait up to 30 seconds). The window should stay interactive. If it had already loaded once, previous figures stay visible under a failure banner. If it never connected, it shows "Assistant is offline".
 
 ## Tests
 

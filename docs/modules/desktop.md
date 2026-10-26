@@ -1,28 +1,44 @@
-# Module: desktop client (G0/G1)
+# Module: desktop client (home reliability)
 
 ## Purpose
 
-Native Linux window that talks to `nats-assistant` as a client. G0 is the application shell. G1 is a status-only home screen.
+Native Linux window that talks to `nats-assistant` as a client. The home screen shows whether the assistant is reachable and the summary fields already provided by `/v1/status` and `/v1/home`.
 
 ## Data
 
-None stored here. The only payload read is `/v1/status`:
+Nothing is stored here. Last successful values are kept only in memory for the current window.
+
+`GET /v1/status`:
 
 ```json
 {"service": "nats-assistant", "status": "online", "version": "0.1.0"}
 ```
 
+`GET /v1/home` fields the window may display:
+
+- `tasks.pending` (int)
+- `tasks.due_today` (int)
+- `calendar.status` (`online`, `offline`, `not_connected`, `error`)
+- `calendar.stale` (bool)
+- `calendar.updated_at` (ISO timestamp or null)
+
+Task items, calendar events, captures, and comms are not shown.
+
+Last successful refresh time is local to the window, not an API field.
+
 ## Endpoints used
 
 - `GET http://127.0.0.1:8765/v1/status`
+- `GET http://127.0.0.1:8765/v1/home`
 
-Not used yet: `/v1/home`, `/v1/tasks`, `/v1/captures`.
+Not used: `/v1/tasks`, `/v1/captures`.
 
 ## Privacy
 
-Requests stay on loopback. Status JSON contains no private user data. Nothing is logged.
+Requests stay on loopback. The home screen does not print task titles, event descriptions, or other private payload fields. Nothing is logged.
 
 ## Known issues
 
-- The window needs a graphical session (Wayland/X11). Tests do not cover widget rendering.
-- A stale in-flight check is ignored via a request id, but the HTTP call still runs to completion.
+- The window needs a graphical session (Wayland/X11). Tests cover the HTTP client, not widget rendering.
+- A skipped refresh (already busy) still lets the in-flight HTTP calls finish; only the matching request id may update the widgets.
+- Closing the window marks it disposed and removes the 30s GLib timeout; a worker that finishes later is ignored.
