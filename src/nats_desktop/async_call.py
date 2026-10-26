@@ -24,8 +24,13 @@ def call_in_thread(
         try:
             result = work()
         except BaseException as exc:  # noqa: BLE001 — deliver every failure to the UI
-            GLib.idle_add(on_error, exc)
+            GLib.idle_add(_deliver, on_error, exc)
         else:
-            GLib.idle_add(on_success, result)
+            GLib.idle_add(_deliver, on_success, result)
+
+
+def _deliver(callback: Callable[[object], None], value: object) -> bool:
+    callback(value)
+    return False
 
     threading.Thread(target=runner, daemon=True).start()
